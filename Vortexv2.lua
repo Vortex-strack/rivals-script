@@ -1,5 +1,5 @@
 -- ========================================================
---                      VORTEX HUB (FIXED)
+--                      VORTEX HUB V2
 -- ========================================================
 
 local Players = game:GetService("Players")
@@ -10,7 +10,7 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Configuration State
+-- Cấu hình mặc định
 local VortexConfig = {
     Aimbot = false,
     AimbotFOV = 150,
@@ -20,18 +20,16 @@ local VortexConfig = {
     NoClip = false
 }
 
--- Target Storage
 local CurrentTarget = nil
 
 -- ========================================================
---                       UI CREATION
+--                       TẠO GIAO DIỆN UI
 -- ========================================================
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "VortexHub"
+ScreenGui.Name = "VortexHubV2"
 ScreenGui.ResetOnSpawn = false
 
--- Hỗ trợ chạy trên nhiều Executor khác nhau
 if gethui then
     ScreenGui.Parent = gethui()
 elseif syn and syn.protect_gui then
@@ -55,7 +53,7 @@ local Title = Instance.new("TextLabel")
 Title.Name = "Title"
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-Title.Text = "VORTEX HUB"
+Title.Text = "VORTEX HUB V2"
 Title.TextColor3 = Color3.fromRGB(140, 80, 255)
 Title.TextSize = 16
 Title.Font = Enum.Font.SourceSansBold
@@ -68,7 +66,6 @@ Layout.Padding = UDim2.new(0, 5)
 
 Title.LayoutOrder = 0
 
--- Helper Tạo Nút Toggle
 local function CreateToggle(name, layoutOrder, callback)
     local Button = Instance.new("TextButton")
     Button.Name = name .. "Button"
@@ -103,7 +100,6 @@ CreateToggle("ESP", 2, function(val) VortexConfig.ESP = val end)
 CreateToggle("Fly", 3, function(val) VortexConfig.Fly = val end)
 CreateToggle("NoClip", 4, function(val) VortexConfig.NoClip = val end)
 
--- Vòng tròn FOV Aimbot
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1
 FOVCircle.Color = Color3.fromRGB(140, 80, 255)
@@ -113,17 +109,16 @@ FOVCircle.Radius = VortexConfig.AimbotFOV
 FOVCircle.Filled = false
 
 -- ========================================================
---                     MODULE FUNCTIONS
+--                     CÁC HÀM TÍNH NĂNG
 -- ========================================================
 
--- Quét mục tiêu gần tâm chuột nhất (Đã tối ưu cho Rivals FFA)
 local function GetClosestTarget()
     local mousePos = UserInputService:GetMouseLocation()
     local closestDistance = VortexConfig.AimbotFOV
     local target = nil
 
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then -- Bỏ check team để quét chính xác trong Rivals
+        if player ~= LocalPlayer then
             local character = player.Character
             if character and character:FindFirstChild("Head") and character:FindFirstChildOfClass("Humanoid") then
                 local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -145,7 +140,6 @@ local function GetClosestTarget()
     return target
 end
 
--- Hệ thống ESP Highlight
 local ESPHighlights = {}
 local function UpdateESP()
     if not VortexConfig.ESP then
@@ -184,7 +178,6 @@ local function UpdateESP()
     end
 end
 
--- Hệ thống Fly
 local bodyVelocity = nil
 local bodyGyro = nil
 
@@ -224,25 +217,24 @@ local function HandleFly()
 end
 
 -- ========================================================
---                     MAIN LOOP CHẠY SCRIPT
+--                     VÒNG LẶP CHÍNH (MAIN LOOP)
 -- ========================================================
 
 RunService.RenderStepped:Connect(function()
-    -- Xử lý vòng tròn FOV công cụ Aimbot
     if VortexConfig.Aimbot then
         local mousePos = UserInputService:GetMouseLocation()
         FOVCircle.Position = mousePos
         FOVCircle.Visible = true
         
         CurrentTarget = GetClosestTarget()
-        if CurrentTarget and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then -- Giữ chuột phải để Aim
+        -- Nhấn giữ màn hình / chuột để khóa mục tiêu
+        if CurrentTarget and (UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)) then
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, CurrentTarget.Position)
         end
     else
         FOVCircle.Visible = false
     end
 
-    -- Xử lý NoClip (Đi xuyên tường)
     if VortexConfig.NoClip then
         local character = LocalPlayer.Character
         if character then
@@ -254,7 +246,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Cập nhật Fly và ESP liên tục
     HandleFly()
     UpdateESP()
 end)
